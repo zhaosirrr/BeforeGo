@@ -329,7 +329,7 @@
 
   <script>
     const $ = (id) => document.getElementById(id);
-    const DEFAULT_CITY = "北京";
+    const DEFAULT_CITY = "上海";
 
     function setStatus(type, text){
       const el = $("status");
@@ -578,7 +578,6 @@
     }
 
     async function requestIPLocation(){
-      setLocationStatus("定位中…");
       try{
         const resp = await fetch("/api/location");
         const data = await resp.json();
@@ -596,73 +595,52 @@
       setLocationStatus("定位中…");
       
       if(!navigator.geolocation){
-        const ipCity = await requestIPLocation();
-        if(ipCity){
-          fetchWeather(ipCity, { fromLocation:true }).then((ok) => { if(!ok) fallbackToDefault(); }).catch(() => fallbackToDefault());
-        }else{
-          fallbackToDefault();
-        }
+        setStatus("error", "浏览器不支持定位，请手动搜索城市");
+        fallbackToDefault();
         return;
       }
 
       const permission = await checkLocationPermission();
       if(permission === "denied"){
-        const ipCity = await requestIPLocation();
-        if(ipCity){
-          fetchWeather(ipCity, { fromLocation:true }).then((ok) => { if(!ok) fallbackToDefault(); }).catch(() => fallbackToDefault());
-        }else{
-          fallbackToDefault();
-        }
+        setStatus("error", "定位权限已拒绝，请手动搜索城市");
+        fallbackToDefault();
         return;
       }
 
       let timeoutFired = false;
       const timeoutId = setTimeout(() => {
         timeoutFired = true;
-        requestIPLocation().then((ipCity) => {
-          if(ipCity){
-            fetchWeather(ipCity, { fromLocation:true }).then((ok) => { if(!ok) fallbackToDefault(); }).catch(() => fallbackToDefault());
-          }else{
-            fallbackToDefault();
-          }
-        });
-      }, 8000);
+        setStatus("error", "定位超时，请手动搜索城市");
+        fallbackToDefault();
+      }, 10000);
 
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           clearTimeout(timeoutId);
           if(timeoutFired) return;
-          const lon = pos.coords.longitude.toFixed(4);
           const lat = pos.coords.latitude.toFixed(4);
-          const query = `${lon},${lat}`;
+          const lon = pos.coords.longitude.toFixed(4);
+          const query = `${lat},${lon}`;
           setStatus("", "");
+          setLocationStatus("定位成功");
           fetchWeather(query, { fromLocation:true }).then((ok) => { 
             if(!ok){
-              requestIPLocation().then((ipCity) => {
-                if(ipCity) fetchWeather(ipCity, { fromLocation:true }).catch(() => fallbackToDefault());
-                else fallbackToDefault();
-              });
+              setStatus("error", "定位城市查询失败，请手动搜索");
+              fallbackToDefault();
             }
           }).catch(() => {
-            requestIPLocation().then((ipCity) => {
-              if(ipCity) fetchWeather(ipCity, { fromLocation:true }).catch(() => fallbackToDefault());
-              else fallbackToDefault();
-            });
+            setStatus("error", "网络请求失败，请手动搜索");
+            fallbackToDefault();
           });
         },
         (err) => {
           clearTimeout(timeoutId);
           if(timeoutFired) return;
-          requestIPLocation().then((ipCity) => {
-            if(ipCity){
-              setStatus("", "");
-              fetchWeather(ipCity, { fromLocation:true }).then((ok) => { if(!ok) fallbackToDefault(); }).catch(() => fallbackToDefault());
-            }else{
-              fallbackToDefault();
-            }
-          });
+          const msg = getLocationErrorMessage(err.code);
+          setStatus("error", msg);
+          fallbackToDefault();
         },
-        { enableHighAccuracy:true, timeout:8000, maximumAge:0 }
+        { enableHighAccuracy:true, timeout:10000, maximumAge:0 }
       );
     }
 
