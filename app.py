@@ -12,14 +12,299 @@ app = Flask(__name__)
 # 如果你后续想更安全一些，可以把它放到环境变量 WEATHERAPI_KEY。
 DEFAULT_API_KEY = "60c6d521f8b543c4a3372318261507"
 
+CITY_NAME_MAP = {
+    "北京": "Beijing",
+    "上海": "Shanghai",
+    "广州": "Guangzhou",
+    "深圳": "Shenzhen",
+    "杭州": "Hangzhou",
+    "成都": "Chengdu",
+    "南京": "Nanjing",
+    "武汉": "Wuhan",
+    "西安": "Xian",
+    "重庆": "Chongqing",
+    "天津": "Tianjin",
+    "苏州": "Suzhou",
+    "长沙": "Changsha",
+    "郑州": "Zhengzhou",
+    "青岛": "Qingdao",
+    "厦门": "Xiamen",
+    "大连": "Dalian",
+    "沈阳": "Shenyang",
+    "哈尔滨": "Harbin",
+    "福州": "Fuzhou",
+    "南宁": "Nanning",
+    "昆明": "Kunming",
+    "贵阳": "Guiyang",
+    "兰州": "Lanzhou",
+    "银川": "Yinchuan",
+    "西宁": "Xining",
+    "乌鲁木齐": "Urumqi",
+    "呼和浩特": "Hohhot",
+    "拉萨": "Lhasa",
+    "海口": "Haikou",
+    "珠海": "Zhuhai",
+    "东莞": "Dongguan",
+    "佛山": "Foshan",
+    "中山": "Zhongshan",
+    "惠州": "Huizhou",
+    "宁波": "Ningbo",
+    "无锡": "Wuxi",
+    "常州": "Changzhou",
+    "南通": "Nantong",
+    "徐州": "Xuzhou",
+    "温州": "Wenzhou",
+    "绍兴": "Shaoxing",
+    "嘉兴": "Jiaxing",
+    "湖州": "Huzhou",
+    "台州": "Taizhou",
+    "金华": "Jinhua",
+    "衢州": "Quzhou",
+    "丽水": "Lishui",
+    "舟山": "Zhoushan",
+    "石家庄": "Shijiazhuang",
+    "太原": "Taiyuan",
+    "呼和浩特": "Hohhot",
+    "沈阳": "Shenyang",
+    "长春": "Changchun",
+    "哈尔滨": "Harbin",
+    "南京": "Nanjing",
+    "杭州": "Hangzhou",
+    "合肥": "Hefei",
+    "福州": "Fuzhou",
+    "南昌": "Nanchang",
+    "济南": "Jinan",
+    "郑州": "Zhengzhou",
+    "武汉": "Wuhan",
+    "长沙": "Changsha",
+    "广州": "Guangzhou",
+    "南宁": "Nanning",
+    "海口": "Haikou",
+    "重庆": "Chongqing",
+    "成都": "Chengdu",
+    "贵阳": "Guiyang",
+    "昆明": "Kunming",
+    "拉萨": "Lhasa",
+    "西安": "Xian",
+    "兰州": "Lanzhou",
+    "西宁": "Xining",
+    "银川": "Yinchuan",
+    "乌鲁木齐": "Urumqi",
+}
+
 
 def get_api_key() -> str:
     return os.getenv("WEATHERAPI_KEY", DEFAULT_API_KEY).strip()
 
 
+def translate_city_name(city: str) -> str:
+    return CITY_NAME_MAP.get(city, city)
+
+
 @app.get("/")
 def index():
     return render_template("index.html")
+
+
+def get_public_ip():
+    ip_services = [
+        "https://api.ipify.org",
+        "https://icanhazip.com",
+        "https://ifconfig.me/ip",
+    ]
+    for url in ip_services:
+        try:
+            resp = requests.get(url, timeout=3)
+            if resp.status_code == 200:
+                ip = resp.text.strip()
+                if ip and ip != "127.0.0.1":
+                    return ip
+        except requests.RequestException:
+            continue
+    return None
+
+
+def get_city_by_ip(ip):
+    try:
+        resp = requests.get(
+            "http://ip-api.com/json/",
+            params={
+                "query": ip,
+                "fields": "city,country,lat,lon",
+                "lang": "zh-CN",
+            },
+            timeout=5,
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            city = data.get("city")
+            if city:
+                return {
+                    "city": city,
+                    "country": data.get("country"),
+                    "lat": data.get("lat"),
+                    "lon": data.get("lon"),
+                }
+    except requests.RequestException:
+        pass
+    return None
+
+
+def get_city_by_ip2(ip):
+    try:
+        resp = requests.get(
+            f"https://ipinfo.io/{ip}/json",
+            timeout=5,
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            city = data.get("city")
+            if city:
+                return {
+                    "city": city,
+                    "country": data.get("country"),
+                    "lat": data.get("loc", "").split(",")[0] if data.get("loc") else None,
+                    "lon": data.get("loc", "").split(",")[1] if data.get("loc") else None,
+                }
+    except requests.RequestException:
+        pass
+    return None
+
+
+def get_city_by_ip3(ip):
+    try:
+        resp = requests.get(
+            "https://api.sypexgeo.net/json/",
+            params={"ip": ip},
+            timeout=5,
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            city = data.get("city", {}).get("name_zh") or data.get("city", {}).get("name_en")
+            if city:
+                return {
+                    "city": city,
+                    "country": data.get("country", {}).get("name_zh"),
+                    "lat": data.get("city", {}).get("lat"),
+                    "lon": data.get("city", {}).get("lon"),
+                }
+    except requests.RequestException:
+        pass
+    return None
+
+
+def get_city_by_ip4(ip):
+    try:
+        resp = requests.get(
+            "https://api.ip.sb/geoip/" + ip,
+            timeout=5,
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            city = data.get("city")
+            if city:
+                return {
+                    "city": city,
+                    "country": data.get("country"),
+                    "lat": data.get("latitude"),
+                    "lon": data.get("longitude"),
+                }
+    except requests.RequestException:
+        pass
+    return None
+
+
+def get_city_by_ip5(ip):
+    try:
+        resp = requests.get(
+            "https://freegeoip.app/json/" + ip,
+            timeout=5,
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            city = data.get("city_name") or data.get("city")
+            if city:
+                return {
+                    "city": city,
+                    "country": data.get("country_name"),
+                    "lat": data.get("latitude"),
+                    "lon": data.get("longitude"),
+                }
+    except requests.RequestException:
+        pass
+    return None
+
+
+def resolve_city_from_ip(ip):
+    ip_resolvers = [get_city_by_ip, get_city_by_ip2, get_city_by_ip3, get_city_by_ip4, get_city_by_ip5]
+    for resolver in ip_resolvers:
+        result = resolver(ip)
+        if result:
+            return result
+    return None
+
+
+def get_default_city():
+    import random
+    test_cities = ["北京", "上海", "广州", "深圳", "杭州", "成都"]
+    return random.choice(test_cities)
+
+
+def get_city_name(city):
+    if isinstance(city, str):
+        return city
+    return city.get("city") if isinstance(city, dict) else None
+
+
+def get_city_name_in_chinese(city):
+    city_name = get_city_name(city)
+    if city_name:
+        return translate_city_name(city_name)
+    return None
+
+
+@app.get("/api/location")
+def api_location():
+    client_ip = request.remote_addr
+    
+    if client_ip in ("127.0.0.1", "localhost", "::1"):
+        public_ip = get_public_ip()
+        if public_ip:
+            city_info = resolve_city_from_ip(public_ip)
+            if city_info:
+                city_name = get_city_name(city_info)
+                translated_name = translate_city_name(city_name) if city_name else None
+                return jsonify({
+                    "ok": True,
+                    "city": translated_name or city_name,
+                    "country": city_info.get("country"),
+                    "lat": city_info.get("lat"),
+                    "lon": city_info.get("lon"),
+                    "ip": public_ip,
+                })
+        
+        return jsonify({
+            "ok": True,
+            "city": "上海",
+            "country": "中国",
+            "ip": "本地开发环境",
+            "message": "无法获取公网IP，已默认使用上海",
+        })
+    
+    city_info = resolve_city_from_ip(client_ip)
+    if city_info:
+        city_name = get_city_name(city_info)
+        translated_name = translate_city_name(city_name) if city_name else None
+        return jsonify({
+            "ok": True,
+            "city": translated_name or city_name,
+            "country": city_info.get("country"),
+            "lat": city_info.get("lat"),
+            "lon": city_info.get("lon"),
+            "ip": client_ip,
+        })
+    
+    return jsonify({"ok": False, "message": "无法识别当前城市"}), 404
 
 
 @app.get("/api/weather")
@@ -30,13 +315,15 @@ def api_weather():
 
     api_key = get_api_key()
     url = "https://api.weatherapi.com/v1/forecast.json"
+    
+    translated_city = translate_city_name(city)
 
     try:
         resp = requests.get(
             url,
             params={
                 "key": api_key,
-                "q": city,
+                "q": translated_city,
                 "days": 8,  # today + future 7 days
                 "aqi": "yes",  # 开启空气质量数据
                 "alerts": "no",
@@ -161,5 +448,4 @@ def api_weather():
 
 
 if __name__ == "__main__":
-    # 便于本地开发：开启 debug，自动重载
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5001, debug=True)
