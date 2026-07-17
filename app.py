@@ -699,10 +699,20 @@ def geocode_city(city_name):
                 geocode = data["geocodes"][0]
                 location = geocode.get("location", "").split(",")
                 if len(location) == 2:
+                    district = geocode.get("district")
+                    amap_city = geocode.get("city")
+                    
+                    if district and district != amap_city:
+                        display_name = district
+                    elif amap_city:
+                        display_name = amap_city
+                    else:
+                        display_name = city_name
+                    
                     return {
                         "lat": float(location[1]),
                         "lon": float(location[0]),
-                        "city": geocode.get("city") or geocode.get("district") or city_name,
+                        "city": display_name,
                         "province": geocode.get("province"),
                     }
     except requests.RequestException:
