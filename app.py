@@ -9,9 +9,11 @@ from flask import Flask, jsonify, render_template, request
 
 app = Flask(__name__)
 
-# 说明：你给的 Key 直接写在这里了，方便你本地直接跑。
-# 如果你后续想更安全一些，可以把它放到环境变量 WEATHERAPI_KEY。
-DEFAULT_API_KEY = "60c6d521f8b543c4a3372318261507"
+DEFAULT_AMAP_KEY = "你的高德地图API Key"
+
+
+def get_amap_key() -> str:
+    return os.getenv("AMAP_KEY", DEFAULT_AMAP_KEY).strip()
 
 
 TAROT_CARDS = {
@@ -551,147 +553,251 @@ def api_location():
     return jsonify({"ok": False, "message": "无法识别当前城市"}), 404
 
 
-@app.get("/api/weather")
+def geocode_city(city_name):
+    amap_key = get_amap_key()
+    if not amap_key or amap_key == "你的高德地图API Key":
+        return None
+    
+    try:
+        resp = requests.get(
+            "https://restapi.amap.com/v3/geocode/geo",
+            params={
+                "key": amap_key,
+                "address": city_name,
+                "output": "JSON",
+            },
+            timeout=5,
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get("status") == "1" and data.get("geocodes"):
+                geocode = data["geocodes"][0]
+                location = geocode.get("location", "").split(",")
+                if len(location) == 2:
+                    return {
+                        "lat": float(location[1]),
+                        "lon": float(location[0]),
+                        "city": geocode.get("city") or geocode.get("district") or city_name,
+                        "province": geocode.get("province"),
+                    }
+    except requests.RequestException:
+        pass
+    return None
+
+
+def get_weather_by_coords(lat, lon):
+    try:
+        resp = requests.get(
+            "https://api.open-meteo.com/v1/forecast",
+            params={
+                "latitude": lat,
+                "longitude": lon,
+                "current": "temperature_2m,apparent_temperature,humidity_2m,wind_speed_10m,weather_code,is_day",
+                "hourly": "temperature_2m,weather_code,wind_speed_10m,humidity_2m,precipitation_probability",
+                "daily": "weather_code,temperature_2m_max,temperature_2m_min",
+                "forecast_days": 8,
+                "timezone": "Asia/Shanghai",
+                "units": "metric",
+            },
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            return resp.json()
+    except requests.RequestException:
+        pass
+    return None
+
+
+def get_air_quality(lat, lon):
+    try:
+        resp = requests.get(
+            "https://air-quality-api.open-meteo.com/v1/air-quality",
+            params={
+                "latitude": lat,
+                "longitude": lon,
+                "current": "pm2_5,pm10,o3,no2,so2,co,aqi",
+                "timezone": "Asia/Shanghai",
+            },
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            return resp.json()
+    except requests.RequestException:
+        pass
+    return None
+
+
+WMO_WEATHER_CODES = {
+    0: {"text": "晴", "icon": "sunny"},
+    1: {"text": "晴", "icon": "sunny"},
+    2: {"text": "多云", "icon": "cloudy"},
+    3: {"text": "阴", "icon": "cloudy"},
+    45: {"text": "雾", "icon": "fog"},
+    48: {"text": "雾凇", "icon": "fog"},
+    51: {"text": "毛毛雨", "icon": "rainy"},
+    53: {"text": "小雨", "icon": "rainy"},
+    55: {"text": "小雨", "icon": "rainy"},
+    56: {"text": "冻毛毛雨", "icon": "rainy"},
+    57: {"text": "冻毛毛雨", "icon": "rainy"},
+    61: {"text": "小雨", "icon": "rainy"},
+    63: {"text": "中雨", "icon": "rainy"},
+    65: {"text": "大雨", "icon": "rainy"},
+    66: {"text": "冻雨", "icon": "rainy"},
+    67: {"text": "冻雨", "icon": "rainy"},
+    71: {"text": "小雪", "icon": "snowy"},
+    73: {"text": "小雪", "icon": "snowy"},
+    75: {"text": "大雪", "icon": "snowy"},
+    77: {"text": "雪粒", "icon": "snowy"},
+    80: {"text": "阵雨", "icon": "rainy"},
+    81: {"text": "阵雨", "icon": "rainy"},
+    82: {"text": "强阵雨", "icon": "rainy"},
+    85: {"text": "阵雪", "icon": "snowy"},
+    86: {"text": "阵雪", "icon": "snowy"},
+    95: {"text": "雷暴", "icon": "storm"},
+    96: {"text": "雷暴", "icon": "storm"},
+    99: {"text": "雷暴", "icon": "storm"},
+}
+
+
+def get_weather_condition(code):
+    return WMO_WEATHER_CODES.get(code, {"text": "未知", "icon": "cloudy"})
+
+
+def aqi_to_epa_index(aqi):
+    if aqi <= 50:
+        return 1
+    elif aqi <= 100:
+        return 2
+    elif aqi <= 150:
+        return 3
+    elif aqi <= 200:
+        return 4
+    elif aqi <= 300:
+        return 5
+    else:
+        return 6
+
+
+@ app.get("/api/weather")
 def api_weather():
     city = (request.args.get("city") or "").strip()
     if not city:
         return jsonify({"ok": False, "message": "请输入城市名，例如：北京、上海、深圳"}), 400
 
-    api_key = get_api_key()
-    url = "https://api.weatherapi.com/v1/forecast.json"
-    
-    translated_city = translate_city_name(city)
+    lat = None
+    lon = None
+    city_name = city
+    province = None
 
-    try:
-        resp = requests.get(
-            url,
-            params={
-                "key": api_key,
-                "q": translated_city,
-                "days": 8,  # today + future 7 days
-                "aqi": "yes",  # 开启空气质量数据
-                "alerts": "no",
-                "lang": "zh",
-            },
-            timeout=10,
-        )
-    except requests.RequestException:
-        return jsonify({"ok": False, "message": "网络请求失败，请检查你的网络后重试。"}), 502
-
-    if resp.status_code != 200:
+    if "," in city and len(city.split(",")) == 2:
         try:
-            err_msg = resp.json().get("error", {}).get("message")
-        except Exception:
-            err_msg = None
+            parts = city.split(",")
+            lat = float(parts[0].strip())
+            lon = float(parts[1].strip())
+        except ValueError:
+            pass
 
-        return (
-            jsonify(
-                {
-                    "ok": False,
-                    "message": err_msg
-                    or "没有找到该城市，请换个城市名试试（支持中文/英文）。",
-                }
-            ),
-            404,
-        )
+    if lat is None or lon is None:
+        geocode_result = geocode_city(city)
+        if geocode_result:
+            lat = geocode_result["lat"]
+            lon = geocode_result["lon"]
+            city_name = geocode_result.get("city") or city
+            province = geocode_result.get("province")
+        else:
+            return jsonify({"ok": False, "message": f"无法定位城市 '{city}'，请检查城市名是否正确"}), 404
 
-    data = resp.json()
+    weather_data = get_weather_by_coords(lat, lon)
+    if not weather_data:
+        return jsonify({"ok": False, "message": "获取天气数据失败，请稍后重试"}), 502
 
-    location = data.get("location", {})
-    current = data.get("current", {})
-    forecast_days = (data.get("forecast", {}) or {}).get("forecastday", [])
+    air_data = get_air_quality(lat, lon)
 
-    def safe_float(x, default=None):
-        try:
-            return float(x)
-        except Exception:
-            return default
+    current = weather_data.get("current", {})
+    hourly = weather_data.get("hourly", {})
+    daily = weather_data.get("daily", {})
 
-    def safe_int(x, default=None):
-        try:
-            return int(x)
-        except Exception:
-            return default
+    condition_code = current.get("weather_code", 0)
+    condition = get_weather_condition(condition_code)
 
-    # 解析空气质量数据
-    air_quality_raw = current.get("air_quality", {}) or {}
     air_quality = None
-    if air_quality_raw:
-        epa_index = safe_int(air_quality_raw.get("us-epa-index"))
+    if air_data and air_data.get("current"):
+        aq = air_data["current"]
         air_quality = {
-            "pm2_5": safe_float(air_quality_raw.get("pm2_5")),
-            "pm10": safe_float(air_quality_raw.get("pm10")),
-            "o3": safe_float(air_quality_raw.get("o3")),
-            "no2": safe_float(air_quality_raw.get("no2")),
-            "so2": safe_float(air_quality_raw.get("so2")),
-            "co": safe_float(air_quality_raw.get("co")),
-            "us_epa_index": epa_index,  # 1-6
+            "pm2_5": aq.get("pm2_5"),
+            "pm10": aq.get("pm10"),
+            "o3": aq.get("o3"),
+            "no2": aq.get("no2"),
+            "so2": aq.get("so2"),
+            "co": aq.get("co"),
+            "us_epa_index": aqi_to_epa_index(aq.get("aqi", 0)),
         }
 
-    city_name = location.get("name") or city
-    chinese_city_name = get_chinese_city_name(city_name)
-    
     result = {
         "ok": True,
-        "city": chinese_city_name,
-        "country": location.get("country"),
-        "region": location.get("region"),
-        "localtime": location.get("localtime"),
+        "city": city_name,
+        "country": "中国",
+        "region": province,
+        "localtime": datetime.now().strftime("%Y-%m-%d %H:%M"),
         "current": {
-            "temp_c": safe_float(current.get("temp_c")),
-            "feelslike_c": safe_float(current.get("feelslike_c")),
-            "humidity": current.get("humidity"),
-            "wind_kph": safe_float(current.get("wind_kph")),
+            "temp_c": current.get("temperature_2m"),
+            "feelslike_c": current.get("apparent_temperature"),
+            "humidity": current.get("humidity_2m"),
+            "wind_kph": current.get("wind_speed_10m"),
             "is_day": current.get("is_day"),
             "condition": {
-                "text": (current.get("condition") or {}).get("text"),
-                "icon": (current.get("condition") or {}).get("icon"),
-                "code": (current.get("condition") or {}).get("code"),
+                "text": condition["text"],
+                "icon": condition["icon"],
+                "code": condition_code,
             },
         },
         "air_quality": air_quality,
         "forecast": [],
-        "hourly": [],  # 当天逐小时预报
+        "hourly": [],
         "generated_at": datetime.now().isoformat(timespec="seconds"),
     }
 
-    # 逐日预报
-    for d in forecast_days:
-        day = d.get("day", {})
-        result["forecast"].append(
-            {
-                "date": d.get("date"),
-                "maxtemp_c": safe_float(day.get("maxtemp_c")),
-                "mintemp_c": safe_float(day.get("mintemp_c")),
+    if daily and daily.get("time"):
+        for i in range(len(daily["time"])):
+            date = daily["time"][i]
+            max_temp = daily.get("temperature_2m_max", [])[i]
+            min_temp = daily.get("temperature_2m_min", [])[i]
+            day_condition_code = daily.get("weather_code", [])[i]
+            day_condition = get_weather_condition(day_condition_code)
+            result["forecast"].append({
+                "date": date,
+                "maxtemp_c": max_temp,
+                "mintemp_c": min_temp,
                 "condition": {
-                    "text": (day.get("condition") or {}).get("text"),
-                    "icon": (day.get("condition") or {}).get("icon"),
-                    "code": (day.get("condition") or {}).get("code"),
+                    "text": day_condition["text"],
+                    "icon": day_condition["icon"],
+                    "code": day_condition_code,
                 },
-            }
-        )
+            })
 
-    # 逐小时预报（取今天的 hour 数据）
-    if forecast_days:
-        hours = forecast_days[0].get("hour", []) or []
-        for h in hours:
-            result["hourly"].append(
-                {
-                    "time": h.get("time"),  # "2026-07-15 00:00"
-                    "temp_c": safe_float(h.get("temp_c")),
-                    "condition": {
-                        "text": (h.get("condition") or {}).get("text"),
-                        "icon": (h.get("condition") or {}).get("icon"),
-                        "code": (h.get("condition") or {}).get("code"),
-                    },
-                    "wind_kph": safe_float(h.get("wind_kph")),
-                    "humidity": safe_int(h.get("humidity")),
-                    "chance_of_rain": safe_int(h.get("chance_of_rain")),
-                }
-            )
+    if hourly and hourly.get("time"):
+        for i in range(len(hourly["time"])):
+            time_str = hourly["time"][i]
+            temp = hourly.get("temperature_2m", [])[i]
+            h_condition_code = hourly.get("weather_code", [])[i]
+            h_condition = get_weather_condition(h_condition_code)
+            wind = hourly.get("wind_speed_10m", [])[i]
+            humidity = hourly.get("humidity_2m", [])[i]
+            rain_chance = hourly.get("precipitation_probability", [])[i]
+            result["hourly"].append({
+                "time": time_str.replace("T", " "),
+                "temp_c": temp,
+                "condition": {
+                    "text": h_condition["text"],
+                    "icon": h_condition["icon"],
+                    "code": h_condition_code,
+                },
+                "wind_kph": wind,
+                "humidity": humidity,
+                "chance_of_rain": rain_chance,
+            })
 
-    # 塔罗运势
-    condition_text = result["current"]["condition"]["text"] if result["current"]["condition"] else ""
+    condition_text = result["current"]["condition"]["text"]
     temp_c = result["current"]["temp_c"]
     date_str = datetime.now().strftime("%Y-%m-%d")
     result["fortune"] = get_tarot_fortune(condition_text, temp_c, date_str)
