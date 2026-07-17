@@ -9,7 +9,7 @@ from flask import Flask, jsonify, render_template, request
 
 app = Flask(__name__)
 
-DEFAULT_AMAP_KEY = "你的高德地图API Key"
+DEFAULT_AMAP_KEY = "c12b7299afb6d4b7e42d8cd0308045c6"
 
 
 def get_amap_key() -> str:
