@@ -931,17 +931,19 @@ def api_weather():
     condition_code = current.get("weather_code", 0)
     condition = get_weather_condition(condition_code)
 
-    air_quality = None
+    aqi = {"value": None, "level": 1}
     if air_data and air_data.get("current"):
         aq = air_data["current"]
-        air_quality = {
+        aqi_value = aq.get("aqi")
+        aqi = {
+            "value": aqi_value,
+            "level": aqi_to_epa_index(aqi_value or 0),
             "pm2_5": aq.get("pm2_5"),
             "pm10": aq.get("pm10"),
             "o3": aq.get("o3"),
             "no2": aq.get("no2"),
             "so2": aq.get("so2"),
             "co": aq.get("co"),
-            "us_epa_index": aqi_to_epa_index(aq.get("aqi", 0)),
         }
 
     result = {
@@ -956,13 +958,11 @@ def api_weather():
             "humidity": current.get("relative_humidity_2m"),
             "wind_kph": current.get("wind_speed_10m"),
             "is_day": current.get("is_day"),
-            "condition": {
-                "text": condition["text"],
-                "icon": condition["icon"],
-                "code": condition_code,
-            },
+            "condition": condition["text"],
+            "condition_icon": condition["icon"],
+            "condition_code": condition_code,
         },
-        "air_quality": air_quality,
+        "aqi": aqi,
         "forecast": [],
         "hourly": [],
         "generated_at": datetime.now().isoformat(timespec="seconds"),
@@ -977,13 +977,9 @@ def api_weather():
             day_condition = get_weather_condition(day_condition_code)
             result["forecast"].append({
                 "date": date,
-                "maxtemp_c": max_temp,
-                "mintemp_c": min_temp,
-                "condition": {
-                    "text": day_condition["text"],
-                    "icon": day_condition["icon"],
-                    "code": day_condition_code,
-                },
+                "max_temp": max_temp,
+                "min_temp": min_temp,
+                "condition": day_condition["text"],
             })
 
     if hourly and hourly.get("time"):
@@ -998,17 +994,13 @@ def api_weather():
             result["hourly"].append({
                 "time": time_str.replace("T", " "),
                 "temp_c": temp,
-                "condition": {
-                    "text": h_condition["text"],
-                    "icon": h_condition["icon"],
-                    "code": h_condition_code,
-                },
+                "condition": h_condition["text"],
                 "wind_kph": wind,
                 "humidity": humidity,
                 "chance_of_rain": rain_chance,
             })
 
-    condition_text = result["current"]["condition"]["text"]
+    condition_text = result["current"]["condition"]
     temp_c = result["current"]["temp_c"]
     date_str = datetime.now().strftime("%Y-%m-%d")
     result["fortune"] = get_tarot_fortune(condition_text, temp_c, date_str)
