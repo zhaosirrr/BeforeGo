@@ -509,6 +509,36 @@ def get_city_name_in_chinese(city):
     return None
 
 
+def get_city_by_amap_ip(ip=None):
+    amap_key = get_amap_key()
+    if not amap_key or amap_key == "你的高德地图API Key":
+        return None
+    
+    try:
+        params = {"key": amap_key, "output": "JSON"}
+        if ip:
+            params["ip"] = ip
+        
+        resp = requests.get(
+            "https://restapi.amap.com/v3/ip",
+            params=params,
+            timeout=5,
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get("status") == "1":
+                return {
+                    "city": data.get("city"),
+                    "province": data.get("province"),
+                    "country": data.get("country"),
+                    "lat": None,
+                    "lon": None,
+                }
+    except requests.RequestException:
+        pass
+    return None
+
+
 @app.get("/api/location")
 def api_location():
     client_ip = request.remote_addr
@@ -516,6 +546,17 @@ def api_location():
     if client_ip in ("127.0.0.1", "localhost", "::1"):
         public_ip = get_public_ip()
         if public_ip:
+            city_info = get_city_by_amap_ip(public_ip)
+            if city_info and city_info.get("city"):
+                return jsonify({
+                    "ok": True,
+                    "city": city_info.get("city"),
+                    "country": city_info.get("country"),
+                    "lat": city_info.get("lat"),
+                    "lon": city_info.get("lon"),
+                    "ip": public_ip,
+                })
+            
             city_info = resolve_city_from_ip(public_ip)
             if city_info:
                 city_name = get_city_name(city_info)
@@ -535,6 +576,17 @@ def api_location():
             "country": "中国",
             "ip": "本地开发环境",
             "message": "无法获取公网IP，已默认使用上海",
+        })
+    
+    city_info = get_city_by_amap_ip(client_ip)
+    if city_info and city_info.get("city"):
+        return jsonify({
+            "ok": True,
+            "city": city_info.get("city"),
+            "country": city_info.get("country"),
+            "lat": city_info.get("lat"),
+            "lon": city_info.get("lon"),
+            "ip": client_ip,
         })
     
     city_info = resolve_city_from_ip(client_ip)
