@@ -478,15 +478,15 @@
     function renderAQI(aq){
       const card = $("aqiCard");
       card.style.display = "block";
-      const idx = Math.max(1, Math.min(6, Number(aq?.us_epa_index) || 1));
+      const idx = Math.max(1, Math.min(6, Number(aq?.level) || 1));
       const label = AQI_LABELS[idx - 1];
-      const value = getAqiDisplayValue(aq, idx);
+      const value = aq?.value != null ? aq.value : "--";
       const el = $("aqiLevel");
       el.setAttribute("data-level", idx);
       el.textContent = `${value} - ${label}`;
       $("aqiMeta").textContent = AQI_HINTS[idx - 1];
       $("aqiDesc").textContent = `当前 AQI ${value}，等级为${label}，${AQI_HINTS[idx - 1]}。`;
-      $("aqiPointer").style.left = `${getAqiPointerPercent(value)}%`;
+      $("aqiPointer").style.left = `${value != null && value != "--" ? Math.min(value / 5, 100) : 0}%`;
     }
 
     function renderHourly(hours){
@@ -501,7 +501,7 @@
         const hNum = parseInt(tp, 10);
         const el = document.createElement("div");
         el.className = "h-item" + (hNum === nowH ? " active" : "");
-        el.innerHTML = `<div class="ht">${hNum === nowH ? "现在" : (tp || pad2(i) + ":00")}</div><div class="he">${pickEmoji(h.condition?.text || "")}</div><div class="hd">${h.temp_c != null ? Math.round(h.temp_c) + "°" : "--"}</div><div class="hr">${h.chance_of_rain ? "💧" + h.chance_of_rain + "%" : ""}</div>`;
+        el.innerHTML = `<div class="ht">${hNum === nowH ? "现在" : (tp || pad2(i) + ":00")}</div><div class="he">${pickEmoji(h.condition || "")}</div><div class="hd">${h.temp_c != null ? Math.round(h.temp_c) + "°" : "--"}</div><div class="hr">${h.chance_of_rain ? "💧" + h.chance_of_rain + "%" : ""}</div>`;
         track.appendChild(el);
       });
       setTimeout(() => { const act = track.querySelector(".active"); if(act) track.scrollLeft = Math.max(0, act.offsetLeft - track.offsetWidth / 2 + act.offsetWidth / 2); }, 80);
@@ -516,7 +516,7 @@
     })();
 
     function render(data){
-      const condText = data.current?.condition?.text || "—";
+      const condText = data.current?.condition || "—";
       const theme = pickTheme(condText);
       const temp = data.current?.temp_c;
       const forecast = Array.isArray(data.forecast) ? data.forecast : [];
@@ -525,8 +525,8 @@
       $("tempNum").textContent = temp != null ? Math.round(temp) : "--";
       
       const todayForecast = forecast[0];
-      $("hiTemp").textContent = todayForecast?.maxtemp_c != null ? Math.round(todayForecast.maxtemp_c) + "°" : "--°";
-      $("loTemp").textContent = todayForecast?.mintemp_c != null ? Math.round(todayForecast.mintemp_c) + "°" : "--°";
+      $("hiTemp").textContent = todayForecast?.max_temp != null ? Math.round(todayForecast.max_temp) + "°" : "--°";
+      $("loTemp").textContent = todayForecast?.min_temp != null ? Math.round(todayForecast.min_temp) + "°" : "--°";
       $("heroAdvice").textContent = makeAdvice(theme, temp);
 
       $("feelsLike").textContent = (data.current?.feelslike_c != null ? Math.round(data.current.feelslike_c) : "--") + "°";
@@ -544,11 +544,11 @@
         days.forEach((d, index) => {
           const el = document.createElement("div");
           el.className = "forecast-item";
-          el.innerHTML = `<div class="f-date">${formatDateCN(d.date, index)}</div><div class="f-emoji">${pickEmoji(d.condition?.text || "")}</div><div class="f-desc">${d.condition?.text || "—"}</div><div class="f-temp"><span>${d.maxtemp_c != null ? Math.round(d.maxtemp_c) : "--"}°</span><span class="f-lo">${d.mintemp_c != null ? Math.round(d.mintemp_c) : "--"}°</span></div>`;
+          el.innerHTML = `<div class="f-date">${formatDateCN(d.date, index)}</div><div class="f-emoji">${pickEmoji(d.condition || "")}</div><div class="f-desc">${d.condition || "—"}</div><div class="f-temp"><span>${d.max_temp != null ? Math.round(d.max_temp) : "--"}°</span><span class="f-lo">${d.min_temp != null ? Math.round(d.min_temp) : "--"}°</span></div>`;
           fw.appendChild(el);
         });
       }
-      renderAQI(data.air_quality);
+      renderAQI(data.aqi);
       renderHourly(data.hourly);
       renderFortune(data.fortune);
     }
