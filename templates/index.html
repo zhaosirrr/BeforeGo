@@ -187,19 +187,89 @@
     .aqi-pointer{ position:absolute; top:50%; left:0; width:12px; height:12px; border-radius:50%; background:#fff; box-shadow:0 2px 6px rgba(0,0,0,.2); transform:translate(-50%, -50%); z-index:1; }
     .aqi-desc{ margin-top:12px; color:rgba(255,255,255,.68); font-size:13px; line-height:1.45; }
 
-    .fortune-content{ display:flex; flex-direction:column; gap:14px; }
-    .fortune-card-info{ display:flex; align-items:baseline; gap:10px; }
-    .fortune-card-name{ font-size:24px; font-weight:700; color:rgba(255,255,255,.95); letter-spacing:-.02em; }
-    .fortune-card-en{ font-size:13px; color:rgba(255,255,255,.45); font-weight:500; letter-spacing:.05em; }
-    .fortune-meaning{ font-size:15px; color:rgba(255,255,255,.72); font-weight:500; line-height:1.5; }
-    .fortune-keywords{ display:flex; flex-wrap:wrap; gap:8px; }
-    .keyword-tag{ padding:5px 12px; border-radius:999px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); color:rgba(255,255,255,.72); font-size:12px; font-weight:600; letter-spacing:.02em; }
-    .fortune-message{ padding:14px 16px; border-radius:18px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); color:rgba(255,255,255,.82); font-size:15px; line-height:1.6; font-style:italic; }
-    .fortune-score-section{ display:flex; align-items:center; gap:12px; }
-    .fortune-score-label{ font-size:13px; color:rgba(255,255,255,.58); font-weight:600; flex-shrink:0; }
-    .fortune-score-bar-bg{ flex:1; height:8px; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden; }
-    .fortune-score-bar{ height:100%; border-radius:999px; transition:width .6s ease, background .3s ease; }
-    .fortune-score-value{ font-size:18px; font-weight:700; color:rgba(255,255,255,.92); min-width:40px; text-align:right; }
+    .fortune-content{ display:flex; flex-direction:column; gap:16px; }
+    .fortune-top{ display:flex; gap:16px; align-items:stretch; }
+    .fortune-card-visual{
+      flex-shrink:0; width:104px; height:164px;
+      display:flex; align-items:center; justify-content:center;
+      position:relative;
+    }
+    .fortune-card-svg{
+      width:100%; height:100%;
+      filter: drop-shadow(0 8px 22px rgba(0,0,0,.28));
+      transition: transform .5s ease;
+    }
+    .fortune-card-svg.reversed{ transform: rotate(180deg); }
+    .fortune-card-info{ flex:1; min-width:0; display:flex; flex-direction:column; gap:6px; justify-content:center; }
+    .fortune-card-header{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .fortune-card-name{ font-size:22px; font-weight:700; color:rgba(255,255,255,.95); letter-spacing:-.02em; line-height:1.15; }
+    .fortune-orientation{
+      padding:3px 9px; border-radius:999px; font-size:11px; font-weight:600; letter-spacing:.04em;
+      border:1px solid rgba(255,255,255,.14);
+    }
+    .fortune-orientation[data-orient="upright"]{ color:#c8f0d9; background:rgba(53,211,157,.14); border-color:rgba(53,211,157,.28); }
+    .fortune-orientation[data-orient="reversed"]{ color:#ffd3c2; background:rgba(255,152,120,.14); border-color:rgba(255,152,120,.28); }
+    .fortune-card-en{ font-size:12px; color:rgba(255,255,255,.45); font-weight:500; letter-spacing:.06em; }
+    .fortune-summary{ font-size:14px; color:rgba(255,255,255,.82); line-height:1.55; margin-top:4px; }
+    .fortune-keywords{ display:flex; flex-wrap:wrap; gap:6px; margin-top:2px; }
+    .keyword-tag{ padding:4px 10px; border-radius:999px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10); color:rgba(255,255,255,.78); font-size:11.5px; font-weight:600; letter-spacing:.02em; }
+    .fortune-score-section{ display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:16px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); }
+    .fortune-score-label{ font-size:12.5px; color:rgba(255,255,255,.62); font-weight:600; flex-shrink:0; }
+    .fortune-stars{ display:flex; gap:4px; align-items:center; flex:1; }
+    .fortune-star{ width:20px; height:20px; flex-shrink:0; }
+    .fortune-star svg{ width:100%; height:100%; display:block; }
+    .fortune-score-value{ font-size:15px; font-weight:700; color:rgba(255,255,255,.85); min-width:44px; text-align:right; letter-spacing:.02em; }
+
+    .fortune-combined{
+      padding:14px 16px; border-radius:16px;
+      background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06);
+      display:flex; flex-direction:column; gap:14px;
+    }
+    .fortune-combined .fortune-score-inline{ display:flex; align-items:center; gap:12px; padding:0; background:none; border:0; }
+    .fortune-combined-divider{ height:1px; background:rgba(255,255,255,.06); }
+    .fortune-taboo{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+    .fortune-advice-grid{
+      display:grid; grid-template-columns:repeat(2, 1fr); gap:6px 12px;
+    }
+    .fortune-advice-row{
+      display:flex; align-items:center; gap:10px;
+      padding:8px 4px; border-radius:12px;
+    }
+    .fortune-advice-icon{
+      width:26px; height:26px; border-radius:9px; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08);
+      color:rgba(255,255,255,.9);
+    }
+    .fortune-advice-label{ font-size:12.5px; color:rgba(255,255,255,.72); font-weight:600; letter-spacing:.02em; flex-shrink:0; white-space:nowrap; }
+    .fortune-advice-mini-bar{ flex:1; height:6px; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden; min-width:24px; }
+    .fortune-advice-mini-fill{ height:100%; border-radius:999px; transition:width .6s ease, background .3s ease; }
+    .fortune-advice-mini-value{ font-size:13px; font-weight:700; color:rgba(255,255,255,.82); min-width:26px; text-align:right; }
+
+    .fortune-taboo-item{
+      padding:11px 13px; border-radius:14px;
+      background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06);
+      display:flex; flex-direction:column; gap:8px;
+    }
+    .fortune-taboo-head{ display:flex; align-items:center; gap:8px; }
+    .fortune-taboo-badge{
+      display:inline-flex; align-items:center; justify-content:center;
+      width:22px; height:22px; border-radius:8px; font-size:12px; font-weight:800; letter-spacing:0;
+    }
+    .fortune-taboo-item[data-kind="do"] .fortune-taboo-badge{ background:rgba(53,211,157,.16); color:#8ee8c0; border:1px solid rgba(53,211,157,.32); }
+    .fortune-taboo-item[data-kind="dont"] .fortune-taboo-badge{ background:rgba(255,120,120,.16); color:#ffb3a4; border:1px solid rgba(255,120,120,.32); }
+    .fortune-taboo-title{ font-size:12.5px; color:rgba(255,255,255,.62); font-weight:600; }
+    .fortune-taboo-list{ display:flex; flex-wrap:wrap; gap:5px; }
+    .fortune-taboo-tag{
+      padding:4px 10px; border-radius:999px; font-size:12px; font-weight:600; letter-spacing:.01em;
+    }
+    .fortune-taboo-item[data-kind="do"] .fortune-taboo-tag{
+      background:rgba(53,211,157,.10); border:1px solid rgba(53,211,157,.22); color:#c9f0dd;
+    }
+    .fortune-taboo-item[data-kind="dont"] .fortune-taboo-tag{
+      background:rgba(255,120,120,.10); border:1px solid rgba(255,120,120,.24); color:#ffd0c4;
+    }
 
 
 
@@ -217,6 +287,8 @@
       .two-col{ grid-template-columns:1fr; }
       .forecast-item{ grid-template-columns:78px 36px 1fr 70px; padding:10px 0; }
       .f-desc{ max-width:130px; }
+      .fortune-card-visual{ width:90px; height:140px; }
+      .fortune-card-name{ font-size:20px; }
     }
 
     @media (max-width:430px){
@@ -235,6 +307,12 @@
       .f-desc{ font-size:12px; max-width:100px; }
       .f-temp{ gap:10px; font-size:15px; }
       .aqi-grid{ grid-template-columns:repeat(2, 1fr); }
+      .fortune-card-visual{ width:82px; height:128px; }
+      .fortune-card-name{ font-size:18px; }
+      .fortune-summary{ font-size:13px; }
+      .fortune-taboo{ grid-template-columns:1fr; }
+      .fortune-advice-grid{ grid-template-columns:1fr; }
+      .fortune-advice-label{ font-size:12px; }
     }
   </style>
 </head>
@@ -275,22 +353,42 @@
         <div class="card-inner">
           <div class="card-title"><span><svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span>今日运势</span></span></div>
           <div class="fortune-content">
-            <div class="fortune-card-info">
-              <div class="fortune-card-name" id="fortuneCardName">愚人</div>
-              <div class="fortune-card-en" id="fortuneCardEn">The Fool</div>
-            </div>
-            <div class="fortune-keywords" id="fortuneKeywords">
-              <span class="keyword-tag">新起点</span>
-              <span class="keyword-tag">勇气</span>
-              <span class="keyword-tag">自由</span>
-            </div>
-            <div class="fortune-message" id="fortuneMessage">今日阳光明媚，好运如影随形，大胆追逐你的梦想吧！</div>
-            <div class="fortune-score-section">
-              <div class="fortune-score-label">运势指数</div>
-              <div class="fortune-score-bar-bg">
-                <div class="fortune-score-bar" id="fortuneScoreBar"></div>
+            <div class="fortune-top">
+              <div class="fortune-card-visual" id="fortuneCardVisual"></div>
+              <div class="fortune-card-info">
+                <div class="fortune-card-header">
+                  <div class="fortune-card-name" id="fortuneCardName">愚人</div>
+                  <span class="fortune-orientation" id="fortuneOrientation" data-orient="upright">正位</span>
+                </div>
+                <div class="fortune-card-en" id="fortuneCardEn">0 · The Fool</div>
+                <div class="fortune-summary" id="fortuneSummary">全新的旅程即将开启，保持纯真与开放，勇敢迈出第一步</div>
+                <div class="fortune-keywords" id="fortuneKeywords"></div>
               </div>
-              <div class="fortune-score-value" id="fortuneScore">78</div>
+            </div>
+            <div class="fortune-combined">
+              <div class="fortune-score-inline">
+                <div class="fortune-score-label">运势星级</div>
+                <div class="fortune-stars" id="fortuneStars"></div>
+              </div>
+              <div class="fortune-combined-divider"></div>
+              <div class="fortune-taboo">
+                <div class="fortune-taboo-item" data-kind="do">
+                  <div class="fortune-taboo-head">
+                    <span class="fortune-taboo-badge">宜</span>
+                    <span class="fortune-taboo-title">今日宜</span>
+                  </div>
+                  <div class="fortune-taboo-list" id="fortuneDos"></div>
+                </div>
+                <div class="fortune-taboo-item" data-kind="dont">
+                  <div class="fortune-taboo-head">
+                    <span class="fortune-taboo-badge">忌</span>
+                    <span class="fortune-taboo-title">今日忌</span>
+                  </div>
+                  <div class="fortune-taboo-list" id="fortuneDonts"></div>
+                </div>
+              </div>
+              <div class="fortune-combined-divider"></div>
+              <div class="fortune-advice-grid" id="fortuneAdvice"></div>
             </div>
           </div>
         </div>
@@ -553,6 +651,112 @@
       renderFortune(data.fortune);
     }
 
+    const TAROT_CARD_GLYPHS = {
+      fool: '<circle cx="60" cy="60" r="18" fill="none"/><path d="M42 96 L60 78 L78 96 L72 132 L48 132 Z" fill="none"/><path d="M32 70 L26 88 L34 92" fill="none"/><path d="M90 74 L96 60 L104 70" fill="none"/>',
+      magician: '<path d="M60 26 L60 96" /><circle cx="60" cy="60" r="30" fill="none"/><path d="M42 60 L78 60"/><path d="M60 42 L60 78"/><path d="M36 108 L84 108"/>',
+      priestess: '<path d="M40 32 L80 32 L80 108 L60 122 L40 108 Z" fill="none"/><circle cx="60" cy="62" r="12" fill="none"/><path d="M40 82 L80 82"/><path d="M60 32 L60 122"/>',
+      empress: '<circle cx="60" cy="52" r="18" fill="none"/><path d="M60 34 L54 24 M60 34 L66 24 M60 34 L60 22"/><path d="M36 130 Q60 88 84 130" fill="none"/><path d="M46 106 Q60 92 74 106" fill="none"/>',
+      emperor: '<path d="M40 40 L80 40 L80 116 L40 116 Z" fill="none"/><path d="M40 40 L50 26 M80 40 L70 26"/><path d="M50 70 L70 70"/><path d="M50 90 L70 90"/>',
+      hierophant: '<path d="M60 26 L60 118"/><path d="M44 42 L76 42"/><path d="M40 60 L80 60"/><path d="M36 82 L84 82"/><path d="M50 118 L70 118"/>',
+      lovers: '<circle cx="44" cy="62" r="14" fill="none"/><circle cx="76" cy="62" r="14" fill="none"/><path d="M44 76 L60 116 L76 76" fill="none"/><path d="M52 44 Q60 34 68 44" fill="none"/>',
+      chariot: '<rect x="30" y="60" width="60" height="40" fill="none"/><circle cx="42" cy="106" r="10" fill="none"/><circle cx="78" cy="106" r="10" fill="none"/><path d="M50 60 L50 40 L70 40 L70 60"/><path d="M60 40 L60 30"/>',
+      strength: '<path d="M30 90 Q60 40 90 90" fill="none"/><circle cx="60" cy="82" r="16" fill="none"/><path d="M50 78 L54 82 M70 78 L66 82"/><path d="M52 92 Q60 100 68 92" fill="none"/><path d="M60 40 L60 26"/>',
+      hermit: '<path d="M50 26 L70 26 L82 116 L38 116 Z" fill="none"/><circle cx="60" cy="56" r="8" fill="none"/><path d="M60 64 L60 116"/><path d="M32 120 L88 120"/><circle cx="90" cy="50" r="6" fill="none"/>',
+      wheel: '<circle cx="60" cy="72" r="34" fill="none"/><circle cx="60" cy="72" r="10" fill="none"/><path d="M60 38 L60 106 M26 72 L94 72 M36 48 L84 96 M84 48 L36 96"/>',
+      justice: '<path d="M60 30 L60 116"/><path d="M30 46 L90 46"/><path d="M30 46 L22 76 L38 76 Z" fill="none"/><path d="M90 46 L82 76 L98 76 Z" fill="none"/><path d="M42 116 L78 116"/>',
+      hanged: '<path d="M30 30 L90 30"/><path d="M60 30 L60 60"/><circle cx="60" cy="70" r="10" fill="none"/><path d="M60 80 L60 108"/><path d="M60 108 L46 92 M60 108 L74 92"/><path d="M50 90 L60 78"/>',
+      death: '<path d="M40 60 Q40 40 60 40 Q80 40 80 60 L80 78 L40 78 Z" fill="none"/><circle cx="52" cy="62" r="4" fill="none"/><circle cx="68" cy="62" r="4" fill="none"/><path d="M50 84 L70 84 M50 92 L70 92 M50 100 L70 100"/><path d="M40 78 L34 116 M80 78 L86 116"/>',
+      temperance: '<path d="M42 40 Q42 60 60 60 Q78 60 78 40" fill="none"/><path d="M42 108 Q42 88 60 88 Q78 88 78 108" fill="none"/><path d="M60 60 L60 88"/><path d="M50 74 L70 74"/><path d="M42 40 L78 40 M42 108 L78 108"/>',
+      devil: '<path d="M40 40 L52 24 L60 36 L68 24 L80 40"/><circle cx="60" cy="70" r="20" fill="none"/><circle cx="52" cy="66" r="3" fill="none"/><circle cx="68" cy="66" r="3" fill="none"/><path d="M50 82 Q60 90 70 82" fill="none"/><path d="M40 108 L52 118 M80 108 L68 118"/>',
+      tower: '<path d="M40 116 L40 46 L80 46 L80 116 Z" fill="none"/><path d="M36 46 L84 46 L80 34 L40 34 Z" fill="none"/><path d="M60 34 L60 22"/><path d="M50 66 L70 66 M50 86 L70 86"/><path d="M28 26 L36 46 M92 26 L84 46"/>',
+      star: '<polygon points="60,24 65,44 86,44 69,56 76,76 60,64 44,76 51,56 34,44 55,44" fill="none"/><path d="M30 96 Q45 88 60 96 Q75 104 90 96" fill="none"/><path d="M30 108 Q45 100 60 108 Q75 116 90 108" fill="none"/>',
+      moon: '<path d="M78 60 A28 28 0 1 0 78 100 A22 22 0 1 1 78 60 Z" fill="none"/><path d="M42 116 L50 100 M60 118 L60 100 M78 116 L72 100"/><circle cx="90" cy="40" r="3" fill="none"/><circle cx="34" cy="46" r="2" fill="none"/>',
+      sun: '<circle cx="60" cy="72" r="22" fill="none"/><path d="M60 34 L60 44 M60 100 L60 110 M22 72 L32 72 M88 72 L98 72 M32 44 L40 52 M80 52 L88 44 M32 100 L40 92 M80 92 L88 100"/>',
+      judgement: '<path d="M36 60 L60 40 L84 60"/><path d="M40 60 L40 110 L80 110 L80 60"/><path d="M48 74 L48 110 M60 74 L60 110 M72 74 L72 110"/><path d="M60 40 L60 24"/><path d="M50 30 L70 30"/>',
+      world: '<ellipse cx="60" cy="72" rx="30" ry="42" fill="none"/><circle cx="60" cy="72" r="10" fill="none"/><path d="M22 42 L28 48 M92 42 L86 48 M22 102 L28 96 M92 102 L86 96"/>',
+    };
+
+    (function buildMinorArcanaGlyphs(){
+      const SUIT_SYMBOLS = {
+        swords: '<path d="M0 -8 L0 8 M-4 -5 L4 -5 M-2 8 L2 8"/>',
+        cups:   '<path d="M-6 -7 L6 -7 L4 3 L-4 3 Z M-4 3 L-4 7 L4 7 L4 3 M-6 -7 Q0 -3 6 -7"/>',
+        wands:  '<path d="M-7 7 L7 -7 M-9 5 L-5 9 M-3 -9 L1 -5 M4 -6 L8 -2"/>',
+        pents:  '<circle r="8"/><polygon points="0,-6 1.8,-1.8 6,-1.8 2.6,1.2 4,6 0,3 -4,6 -2.6,1.2 -6,-1.8 -1.8,-1.8"/>',
+      };
+      const COURT_ORNAMENTS = {
+        p:  '<path d="M-13 6 L-8 -4 L-2 4 L0 -8 L2 4 L8 -4 L13 6 Z"/>',
+        k:  '<path d="M-13 6 L-13 -2 L-6 -6 L0 0 L6 -6 L13 -2 L13 6 Z M-9 0 L9 0"/>',
+        q:  '<path d="M-13 8 L-9 -4 L-4 4 L0 -8 L4 4 L9 -4 L13 8 Z M-13 8 L13 8 M-7 4 L-3 8 M3 8 L7 4"/>',
+        ki: '<path d="M-13 8 L-11 -4 L-5 4 L-1 -6 L1 -6 L5 4 L11 -4 L13 8 Z M-13 8 L13 8 M0 -8 L0 -12 M-3 -10 L3 -10"/>',
+      };
+      const layouts = {
+        1:  [[60, 76, 2.2]],
+        2:  [[60, 44, 1.5], [60, 108, 1.5]],
+        3:  [[60, 40, 1.4], [42, 108, 1.4], [78, 108, 1.4]],
+        4:  [[42, 46, 1.4], [78, 46, 1.4], [42, 108, 1.4], [78, 108, 1.4]],
+        5:  [[42, 44, 1.2], [78, 44, 1.2], [60, 76, 1.2], [42, 108, 1.2], [78, 108, 1.2]],
+        6:  [[42, 40, 1.15], [78, 40, 1.15], [42, 76, 1.15], [78, 76, 1.15], [42, 112, 1.15], [78, 112, 1.15]],
+        7:  [[42, 36, 1.05], [78, 36, 1.05], [42, 72, 1.05], [78, 72, 1.05], [60, 92, 1.05], [42, 116, 1.05], [78, 116, 1.05]],
+        8:  [[42, 34, 1.0], [78, 34, 1.0], [42, 62, 1.0], [78, 62, 1.0], [42, 90, 1.0], [78, 90, 1.0], [42, 118, 1.0], [78, 118, 1.0]],
+        9:  [[38, 36, 0.9], [60, 36, 0.9], [82, 36, 0.9], [38, 76, 0.9], [60, 76, 0.9], [82, 76, 0.9], [38, 116, 0.9], [60, 116, 0.9], [82, 116, 0.9]],
+        10: [[38, 34, 0.85], [60, 34, 0.85], [82, 34, 0.85], [38, 66, 0.85], [60, 66, 0.85], [82, 66, 0.85], [38, 98, 0.85], [60, 98, 0.85], [82, 98, 0.85], [60, 128, 0.85]],
+      };
+      const suits = ['swords', 'cups', 'wands', 'pents'];
+      function numberGlyph(suit, n){
+        const sym = SUIT_SYMBOLS[suit];
+        return layouts[n].map(([x, y, s]) => `<g transform="translate(${x},${y}) scale(${s})">${sym}</g>`).join('');
+      }
+      function courtGlyph(suit, court){
+        const sym = SUIT_SYMBOLS[suit];
+        const orn = COURT_ORNAMENTS[court];
+        return `<g transform="translate(60,44) scale(1.15)">${orn}</g>` +
+               `<g transform="translate(60,100) scale(1.9)">${sym}</g>`;
+      }
+      for (const suit of suits){
+        for (let n = 1; n <= 10; n++){
+          TAROT_CARD_GLYPHS[`${suit}_${n}`] = numberGlyph(suit, n);
+        }
+        for (const c of ['p', 'k', 'q', 'ki']){
+          TAROT_CARD_GLYPHS[`${suit}_${c}`] = courtGlyph(suit, c);
+        }
+      }
+    })();
+
+    function renderFortuneCard(card){
+      const glyph = TAROT_CARD_GLYPHS[card.card_key] || TAROT_CARD_GLYPHS.fool;
+      const isReversed = card.orientation === "reversed";
+      const number = card.card_number || "";
+      const strokeColor = isReversed ? "rgba(255,190,160,.85)" : "rgba(255,235,200,.92)";
+      const accent = isReversed ? "#ff9a78" : "#f5cc7a";
+      const bgTop = isReversed ? "#3a2646" : "#2c3e6b";
+      const bgBottom = isReversed ? "#1c1230" : "#101a37";
+      const svg = `
+        <svg class="fortune-card-svg${isReversed ? " reversed" : ""}" viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="cardBg-${card.card_key}" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="${bgTop}"/>
+              <stop offset="1" stop-color="${bgBottom}"/>
+            </linearGradient>
+          </defs>
+          <rect x="2" y="2" width="116" height="176" rx="12" ry="12" fill="url(#cardBg-${card.card_key})" stroke="${accent}" stroke-width="1.5"/>
+          <rect x="7" y="7" width="106" height="166" rx="9" ry="9" fill="none" stroke="${accent}" stroke-opacity=".38" stroke-width=".8"/>
+          <text x="60" y="24" text-anchor="middle" font-family="Inter, serif" font-size="11" font-weight="600" fill="${accent}" letter-spacing="1">${number}</text>
+          <g transform="translate(0,10)" stroke="${strokeColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+            ${glyph}
+          </g>
+          <text x="60" y="164" text-anchor="middle" font-family="Inter, serif" font-size="9" font-weight="600" fill="${accent}" letter-spacing="1.4" text-transform="uppercase">${(card.card_en || "").toUpperCase()}</text>
+        </svg>
+      `;
+      return svg;
+    }
+
+    const FORTUNE_ADVICE_META = [
+      { key: "career_wealth", label: "事业", icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M12 11v6"/><path d="M14.2 12.3H10.9a1.4 1.4 0 0 0 0 2.8h2.2a1.4 1.4 0 0 1 0 2.8H9.6"/></svg>' },
+      { key: "love", label: "爱情", icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' },
+      { key: "social", label: "人际", icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' },
+      { key: "health", label: "健康", icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>' },
+    ];
+
     function renderFortune(fortune){
       const card = $("beforeGoCard");
       if(!fortune){
@@ -560,24 +764,69 @@
         return;
       }
       card.style.display = "block";
-      
+
       $("fortuneCardName").textContent = fortune.card;
-      $("fortuneCardEn").textContent = fortune.card_en;
-      $("fortuneMessage").textContent = fortune.message;
-      $("fortuneScore").textContent = fortune.luck_score;
-      
+      $("fortuneCardEn").textContent = (fortune.card_number ? fortune.card_number + " · " : "") + fortune.card_en;
+      $("fortuneSummary").textContent = fortune.summary || "";
+      const stars = (typeof fortune.luck_stars === "number")
+        ? fortune.luck_stars
+        : Math.max(0.5, Math.min(5, Math.round((fortune.luck_score || 60) / 100 * 5 * 2) / 2));
+      $("fortuneStars").innerHTML = renderStars(stars);
+
+      const orientEl = $("fortuneOrientation");
+      orientEl.textContent = fortune.orientation_label || (fortune.orientation === "reversed" ? "逆位" : "正位");
+      orientEl.setAttribute("data-orient", fortune.orientation || "upright");
+
+      $("fortuneCardVisual").innerHTML = renderFortuneCard(fortune);
+
       const keywordsEl = $("fortuneKeywords");
-      keywordsEl.innerHTML = fortune.keywords.map(k => `<span class="keyword-tag">${k}</span>`).join("");
-      
-      const scoreBar = $("fortuneScoreBar");
-      scoreBar.style.width = fortune.luck_score + "%";
-      
-      let scoreColor = "#35d39d";
-      if(fortune.luck_score >= 80) scoreColor = "#f59e0b";
-      else if(fortune.luck_score >= 60) scoreColor = "#35d39d";
-      else if(fortune.luck_score >= 40) scoreColor = "#f59e0b";
-      else scoreColor = "#ef4444";
-      scoreBar.style.background = scoreColor;
+      keywordsEl.innerHTML = (fortune.keywords || []).map(k => `<span class="keyword-tag">${k}</span>`).join("");
+
+      const adviceEl = $("fortuneAdvice");
+      const dims = fortune.dimension_scores || {};
+      adviceEl.innerHTML = FORTUNE_ADVICE_META.map((m) => {
+        const score = Math.max(0, Math.min(100, dims[m.key] != null ? dims[m.key] : 60));
+        const color = dimColor(score);
+        return `<div class="fortune-advice-row">`
+             + `<div class="fortune-advice-icon">${m.icon}</div>`
+             + `<div class="fortune-advice-label">${m.label}</div>`
+             + `<div class="fortune-advice-mini-bar"><div class="fortune-advice-mini-fill" style="width:${score}%;background:${color}"></div></div>`
+             + `<div class="fortune-advice-mini-value">${score}</div>`
+             + `</div>`;
+      }).join("");
+
+      $("fortuneDos").innerHTML = (fortune.dos || []).map(t => `<span class="fortune-taboo-tag">${t}</span>`).join("");
+      $("fortuneDonts").innerHTML = (fortune.donts || []).map(t => `<span class="fortune-taboo-tag">${t}</span>`).join("");
+    }
+
+    function dimColor(score){
+      if(score >= 80) return "#f5cc7a";
+      if(score >= 60) return "#35d39d";
+      if(score >= 40) return "#f59e0b";
+      return "#ef4444";
+    }
+
+    function renderStars(stars){
+      const total = 5;
+      let html = "";
+      for(let i = 0; i < total; i++){
+        const remaining = stars - i;
+        let fillPct = 0;
+        if(remaining >= 1) fillPct = 100;
+        else if(remaining >= 0.5) fillPct = 50;
+        else fillPct = 0;
+        const gid = `starGrad_${i}_${Math.round(stars * 10)}`;
+        html += `<span class="fortune-star">`
+              + `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">`
+              + `<defs><linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="0">`
+              + `<stop offset="${fillPct}%" stop-color="#f5cc7a"/>`
+              + `<stop offset="${fillPct}%" stop-color="rgba(255,255,255,0)"/>`
+              + `</linearGradient></defs>`
+              + `<polygon points="12,2.5 14.9,9 22,10 16.5,14.9 18.2,22 12,18.2 5.8,22 7.5,14.9 2,10 9.1,9" `
+              + `fill="url(#${gid})" stroke="#f5cc7a" stroke-width="1.4" stroke-linejoin="round"/>`
+              + `</svg></span>`;
+      }
+      return html;
     }
 
     async function fetchWeather(city, options = {}){
